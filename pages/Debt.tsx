@@ -46,6 +46,11 @@ export const Debt: React.FC = () => {
     if (!debt) return;
 
     const payment = Number(payAmount);
+    if (payment <= 0) {
+      // Show an error message or simply ignore the payment
+      console.error("Payment amount must be positive");
+      return;
+    }
     const totalPaid = debt.payments.reduce((a, b) => a + b.amount, 0) + payment;
     
     const updatedDebt: DebtRecord = {

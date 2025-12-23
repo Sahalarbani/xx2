@@ -164,9 +164,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [deviceId, setDeviceId] = useState('');
   const [showPurchase, setShowPurchase] = useState(false);
+  const [adminExists, setAdminExists] = useState<boolean | null>(null);
 
   // Initialization
   useEffect(() => {
+    const checkAdmin = async () => {
+      const adminCreds = await db.getAdminCredentials();
+      setAdminExists(!!adminCreds);
+    };
+    checkAdmin();
+
     let storedDeviceId = localStorage.getItem('lumina_device_id');
     if (!storedDeviceId) {
       storedDeviceId = crypto.randomUUID();
@@ -201,6 +208,20 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setKeyInput(val);
     setError('');
   };
+
+  const handleCreateAdmin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await db.updateAdminCredentials(username, password);
+      setAdminExists(true);
+      onLogin('ADMIN-CRED-SESSION', true); // Auto-login after creation
+    } catch (err) {
+      console.error(err);
+      setError("Failed to create admin account.");
+    }
+    setLoading(false);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,6 +266,36 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setLoading(false);
     }
   };
+
+  // Render loading state while checking for admin
+  if (adminExists === null) {
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background">
+            <Loader2 className="w-8 h-8 animate-spin text-primary"/>
+        </div>
+    )
+  }
+
+  // Render admin creation form if no admin exists
+  if (!adminExists && mode === 'credentials') {
+      return (
+          <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
+                <Card>
+                    <div className="text-center mb-6">
+                        <h1 className="text-xl font-bold">Create Admin Account</h1>
+                        <p className="text-slate-400 text-sm">This is a one-time setup.</p>
+                    </div>
+                    <div className="space-y-4">
+                        <Input icon={<User className="w-4 h-4" />} placeholder="Choose Username" value={username} onChange={e => setUsername(e.target.value)} />
+                        <Input type="password" icon={<Lock className="w-4 h-4" />} placeholder="Choose Password" value={password} onChange={e => setPassword(e.target.value)} />
+                        <Button onClick={handleCreateAdmin} isLoading={loading} disabled={!username || !password} className="w-full">Create Admin & Login</Button>
+                    </div>
+                </Card>
+            </motion.div>
+        </div>
+      )
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">

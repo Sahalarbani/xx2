@@ -36,11 +36,6 @@ const INITIAL_PROFILE: ShopProfile = {
   footerMessage: "Thank you for visiting the future!"
 };
 
-const DEFAULT_ADMIN = {
-  username: 'sahal',
-  password: 'Pulokulon05'
-};
-
 class DBService {
   private isOffline = false;
 
@@ -77,12 +72,11 @@ class DBService {
       if (this.isOffline) throw new Error("Offline");
       const docRef = doc(firestore, 'settings', 'admin_creds');
       const snap = await getDoc(docRef);
-      if (snap.exists()) return snap.data() as typeof DEFAULT_ADMIN;
-      await setDoc(docRef, DEFAULT_ADMIN);
-      return DEFAULT_ADMIN;
+      if (snap.exists()) return snap.data() as { username: string, password: string };
+      return null; // Return null if no admin credentials exist
     } catch (e) {
       this.handleError(e);
-      return this.getLocal('admin_creds', DEFAULT_ADMIN);
+      return this.getLocal('admin_creds', null);
     }
   }
 
@@ -98,7 +92,7 @@ class DBService {
 
   async validateAdmin(u: string, p: string): Promise<boolean> {
     const creds = await this.getAdminCredentials();
-    return creds.username === u && creds.password === p;
+    return creds ? creds.username === u && creds.password === p : false;
   }
 
   // --- Products ---

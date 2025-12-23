@@ -15,7 +15,8 @@ export const Admin: React.FC = () => {
   const [customPrice, setCustomPrice] = useState<number>(150000);
   
   const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
     loadData();
@@ -25,8 +26,9 @@ export const Admin: React.FC = () => {
     const k = await db.getKeys();
     setKeys(k);
     const creds = await db.getAdminCredentials();
-    setAdminUsername(creds.username);
-    setAdminPassword(creds.password);
+    if (creds) {
+        setAdminUsername(creds.username);
+    }
   };
 
   useEffect(() => {
@@ -69,11 +71,17 @@ export const Admin: React.FC = () => {
   };
   
   const handleUpdateCreds = async () => {
-    if(!adminUsername || !adminPassword) {
-        alert("Username and Password cannot be empty");
+    if(!adminUsername || !newPassword) {
+        alert("Username and new password cannot be empty");
         return;
     }
-    await db.updateAdminCredentials(adminUsername, adminPassword);
+    if (newPassword !== confirmPassword) {
+        alert("New passwords do not match.");
+        return;
+    }
+    await db.updateAdminCredentials(adminUsername, newPassword);
+    setNewPassword('');
+    setConfirmPassword('');
     alert("Admin credentials updated successfully.");
   };
 
@@ -204,7 +212,7 @@ export const Admin: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                     <div>
-                        <label className="text-xs text-slate-400">New Username</label>
+                        <label className="text-xs text-slate-400">Admin Username</label>
                         <Input 
                             icon={<User className="w-3 h-3" />}
                             value={adminUsername}
@@ -217,8 +225,20 @@ export const Admin: React.FC = () => {
                         <Input 
                             type="password"
                             icon={<Lock className="w-3 h-3" />}
-                            value={adminPassword}
-                            onChange={(e) => setAdminPassword(e.target.value)}
+                            placeholder="Enter new password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="h-9 text-xs"
+                        />
+                    </div>
+                     <div>
+                        <label className="text-xs text-slate-400">Confirm New Password</label>
+                        <Input 
+                            type="password"
+                            icon={<Lock className="w-3 h-3" />}
+                            placeholder="Confirm new password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                             className="h-9 text-xs"
                         />
                     </div>
